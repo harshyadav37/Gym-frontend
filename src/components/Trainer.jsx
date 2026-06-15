@@ -1,18 +1,368 @@
-import React, { useState, useEffect } from "react";
-import { Star, Award, DollarSign, Search } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Star, Award, DollarSign, Search, SlidersHorizontal,
+  ChevronDown, X, CheckCircle2, Users, Trophy, Zap,
+  Clock, BarChart3, ShieldCheck, Flame, RotateCcw,
+  ArrowRight, Eye,
+} from "lucide-react";
 import { handleError } from "../util";
 import { useNavigate } from "react-router-dom";
 
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+
+const STATS = [
+  { value: "500+", label: "Certified Trainers", Icon: ShieldCheck },
+  { value: "10K+", label: "Active Members",     Icon: Users },
+  { value: "50K+", label: "Sessions Done",      Icon: Flame },
+  { value: "4.9★", label: "Avg Rating",         Icon: Star },
+];
+
+// ─── STAR ROW ─────────────────────────────────────────────────────────────────
+
+function StarRow({ rating }) {
+  const r = parseFloat(rating) || 0;
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          size={12}
+          className={n <= Math.round(r) ? "text-yellow-400 fill-yellow-400" : "text-white/15 fill-white/15"}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── TRAINER CARD ─────────────────────────────────────────────────────────────
+
+function TrainerCard({ trainer, onProfile, index }) {
+  const [hovered, setHovered] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setVisible(true); },
+      { threshold: 0.15 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const tags = Array.isArray(trainer.trainerTags)
+    ? trainer.trainerTags
+    : typeof trainer.trainerTags === "string"
+    ? trainer.trainerTags.split(",").map((t) => t.trim())
+    : [];
+
+  const isAvailable = trainer.trainerStatus === "Available";
+
+  return (
+    <div
+      ref={ref}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(32px)",
+        transition: `opacity 0.55s ease ${index * 0.07}s, transform 0.55s ease ${index * 0.07}s`,
+      }}
+    >
+      <div
+        className="relative rounded-3xl overflow-hidden flex flex-col h-full cursor-pointer transition-all duration-400"
+        style={{
+          background: "linear-gradient(145deg, rgba(18,18,28,0.95) 0%, rgba(12,8,16,0.98) 100%)",
+          border: hovered
+            ? "1px solid rgba(239,68,68,0.45)"
+            : "1px solid rgba(255,255,255,0.07)",
+          boxShadow: hovered
+            ? "0 0 40px rgba(239,68,68,0.18), 0 24px 60px rgba(0,0,0,0.7)"
+            : "0 8px 32px rgba(0,0,0,0.5)",
+          transform: hovered ? "translateY(-6px)" : "translateY(0)",
+          transition: "all 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+        }}
+      >
+        {/* Image */}
+        <div className="relative h-56 overflow-hidden flex-shrink-0">
+          <img
+            src={trainer.trainerImage || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=280&fit=crop"}
+            alt={trainer.trainerName}
+            className="w-full h-full object-cover transition-transform duration-700"
+            style={{ transform: hovered ? "scale(1.08)" : "scale(1)" }}
+            onError={(e) => {
+              e.target.src = "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=280&fit=crop";
+            }}
+          />
+
+          {/* Gradient overlay */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to top, rgba(12,8,16,1) 0%, rgba(12,8,16,0.3) 50%, transparent 100%)" }}
+          />
+
+          {/* Status badge */}
+          <div className="absolute top-3 left-3">
+            <span
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+              style={{
+                background: isAvailable ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)",
+                border: `1px solid ${isAvailable ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"}`,
+                color: isAvailable ? "#4ade80" : "#f87171",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: isAvailable ? "#4ade80" : "#f87171",
+                  boxShadow: isAvailable ? "0 0 6px #4ade80" : "0 0 6px #f87171",
+                  animation: isAvailable ? "pulse 2s ease-in-out infinite" : "none",
+                }}
+              />
+              {isAvailable ? "Available" : "Limited"}
+            </span>
+          </div>
+
+          {/* Verified badge */}
+          <div className="absolute top-3 right-3">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg, #ef4444, #b91c1c)",
+                boxShadow: "0 4px 12px rgba(239,68,68,0.4)",
+              }}
+            >
+              <CheckCircle2 size={14} className="text-white" strokeWidth={2.5} />
+            </div>
+          </div>
+
+          {/* Hover stats overlay — slides up */}
+          <div
+            className="absolute bottom-0 left-0 right-0 px-4 pb-4 transition-all duration-350"
+            style={{
+              opacity: hovered ? 1 : 0,
+              transform: hovered ? "translateY(0)" : "translateY(12px)",
+            }}
+          >
+            <div
+              className="grid grid-cols-3 gap-2 rounded-2xl p-3"
+              style={{
+                background: "rgba(0,0,0,0.7)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              {[
+                { label: "Clients", value: trainer.trainerClients || "80+" },
+                { label: "Success", value: trainer.trainerSuccess || "97%" },
+                { label: "Certs",   value: trainer.trainerCertifications || "0" },
+              ].map(({ label, value }) => (
+                <div key={label} className="text-center">
+                  <p className="text-white font-black text-sm">{value}</p>
+                  <p className="text-white/45 text-[10px] uppercase tracking-wider">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex flex-col flex-1 p-5 gap-3">
+          {/* Name + rating */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-black text-white text-lg leading-tight truncate">{trainer.trainerName}</h3>
+              <p className="text-white/45 text-xs mt-0.5 truncate">{trainer.trainerRole}</p>
+            </div>
+            <div className="flex-shrink-0 text-right">
+              <div className="flex items-center gap-1 justify-end">
+                <Star size={13} className="text-yellow-400 fill-yellow-400" />
+                <span className="text-white font-bold text-sm">{trainer.trainerRating}</span>
+              </div>
+              <p className="text-white/35 text-[10px]">({trainer.trainerReviews || 0})</p>
+            </div>
+          </div>
+
+          {/* Experience bar */}
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-white/40 text-xs uppercase tracking-widest">Experience</span>
+              <span className="text-white/70 text-xs font-bold">{trainer.trainerExperience} yrs</span>
+            </div>
+            <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${Math.min((trainer.trainerExperience / 20) * 100, 100)}%`,
+                  background: "linear-gradient(90deg, #ef4444, #f97316)",
+                  boxShadow: "0 0 8px rgba(239,68,68,0.5)",
+                  transitionDelay: visible ? `${index * 0.07 + 0.3}s` : "0s",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="flex flex-wrap gap-1.5">
+            {tags.slice(0, 3).map((tag, i) => (
+              <span
+                key={i}
+                className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                style={{
+                  background: "rgba(239,68,68,0.1)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                  color: "rgba(252,165,165,0.9)",
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+            {tags.length > 3 && (
+              <span
+                className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}
+              >
+                +{tags.length - 3}
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          <p className="text-white/40 text-xs leading-relaxed line-clamp-2 flex-1">{trainer.trainerDescription}</p>
+
+          {/* Price + certs */}
+          <div
+            className="flex items-center justify-between rounded-2xl px-4 py-3"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-1.5">
+              <Award size={14} className="text-white/30" />
+              <span className="text-white/50 text-xs">{trainer.trainerCertifications || 0} Certifications</span>
+            </div>
+            <div>
+              <span className="text-white font-black text-base">${trainer.trainerPrice}</span>
+              <span className="text-white/35 text-xs">/hr</span>
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-2 mt-1">
+            <button
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest text-white transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, #ef4444, #b91c1c)",
+                boxShadow: hovered ? "0 6px 24px rgba(239,68,68,0.4)" : "0 4px 16px rgba(239,68,68,0.25)",
+              }}
+            >
+              <Zap size={11} strokeWidth={3} />
+              Book
+            </button>
+            <button
+              onClick={() => onProfile(trainer._id)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest text-white/70 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              <Eye size={11} strokeWidth={2.5} />
+              Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FILTER SELECT ────────────────────────────────────────────────────────────
+
+function FilterSelect({ label, Icon, value, onChange, options, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const active = !!value;
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 px-4 py-3 rounded-2xl text-sm transition-all duration-200 text-left"
+        style={{
+          background: active ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.04)",
+          border: `1px solid ${active ? "rgba(239,68,68,0.35)" : "rgba(255,255,255,0.08)"}`,
+          color: active ? "#fca5a5" : "rgba(255,255,255,0.5)",
+          boxShadow: active ? "0 0 16px rgba(239,68,68,0.1)" : "none",
+        }}
+      >
+        <Icon size={15} strokeWidth={2} className="flex-shrink-0" />
+        <span className="flex-1 truncate font-medium text-xs uppercase tracking-wider">
+          {value || placeholder}
+        </span>
+        <ChevronDown
+          size={14}
+          strokeWidth={2.5}
+          className="flex-shrink-0 transition-transform duration-200"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full left-0 right-0 mt-2 rounded-2xl overflow-hidden z-30"
+          style={{
+            background: "rgba(14,14,22,0.98)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.8)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          <div
+            className="px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white/30 cursor-pointer hover:text-white/60 transition-colors"
+            onClick={() => { onChange(""); setOpen(false); }}
+          >
+            {placeholder}
+          </div>
+          {options.map((opt, i) => (
+            <div
+              key={i}
+              onClick={() => { onChange(String(opt.value)); setOpen(false); }}
+              className="px-4 py-2.5 text-xs font-semibold cursor-pointer transition-all duration-150"
+              style={{
+                color: String(opt.value) === value ? "#f87171" : "rgba(255,255,255,0.65)",
+                background: String(opt.value) === value ? "rgba(239,68,68,0.1)" : "transparent",
+              }}
+              onMouseEnter={(e) => { if (String(opt.value) !== value) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+              onMouseLeave={(e) => { if (String(opt.value) !== value) e.currentTarget.style.background = "transparent"; }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+
 const Trainer = () => {
-  const [trainerCard, setTrainerCard] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedExperience, setSelectedExperience] = useState("");
+  const [trainerCard, setTrainerCard]                   = useState([]);
+  const [searchTerm, setSearchTerm]                     = useState("");
+  const [selectedExperience, setSelectedExperience]     = useState("");
   const [selectedSpecialization, setSelectedSpecialization] = useState("");
   const [selectedAvailability, setSelectedAvailability] = useState("");
-  const [selectedRating, setSelectedRating] = useState("");
+  const [selectedRating, setSelectedRating]             = useState("");
+  const [loading, setLoading]                           = useState(true);
+  const [filtersOpen, setFiltersOpen]                   = useState(false);
   const navigate = useNavigate();
 
-  // Function to calculate average rating from reviews
   const calculateAverageRating = (reviews) => {
     if (!reviews || reviews.length === 0) return 0;
     const sum = reviews.reduce((acc, review) => acc + (review.rating || 0), 0);
@@ -22,7 +372,6 @@ const Trainer = () => {
   const fetchTrainers = async () => {
     try {
       const url = "http://localhost:8080/products/get-trainercard";
-      // const url = "https://gym-project-backend.vercel.app/products/get-trainercard";
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -30,1183 +379,360 @@ const Trainer = () => {
           "Content-Type": "application/json",
         },
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch trainers");
-      }
-
+      if (!response.ok) throw new Error("Failed to fetch trainers");
       const result = await response.json();
-      
-      // Process each trainer to update rating based on reviews
-      const processedTrainers = result.map(trainer => {
+      const processedTrainers = result.map((trainer) => {
         let updatedRating = trainer.trainerRating;
-        let reviewCount = trainer.trainerReviews || 0;
-
-        // Check if trainer has reviews and calculate updated rating
-        if (trainer.reviews && Array.isArray(trainer.reviews) && trainer.reviews.length > 0) {
+        let reviewCount   = trainer.trainerReviews || 0;
+        if (trainer.reviews?.length > 0) {
           updatedRating = calculateAverageRating(trainer.reviews);
-          reviewCount = trainer.reviews.length;
-        } else if (trainer.trainerReviewsList && Array.isArray(trainer.trainerReviewsList) && trainer.trainerReviewsList.length > 0) {
+          reviewCount   = trainer.reviews.length;
+        } else if (trainer.trainerReviewsList?.length > 0) {
           updatedRating = calculateAverageRating(trainer.trainerReviewsList);
-          reviewCount = trainer.trainerReviewsList.length;
+          reviewCount   = trainer.trainerReviewsList.length;
         }
-
-        return {
-          ...trainer,
-          trainerRating: updatedRating,
-          trainerReviews: reviewCount
-        };
+        return { ...trainer, trainerRating: updatedRating, trainerReviews: reviewCount };
       });
-
       setTrainerCard(processedTrainers);
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
-  };
-
-  // Function to refresh trainer data (can be called after reviews are updated)
-  const refreshTrainerData = () => {
-    fetchTrainers();
   };
 
   useEffect(() => {
     fetchTrainers();
-
-    // Set up periodic refresh to catch rating updates
-    const interval = setInterval(refreshTrainerData, 30000); // Refresh every 30 seconds
-
+    const interval = setInterval(fetchTrainers, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const gotoProfile = (id) => {
-    navigate(`/profile/${id}`);
-  };
+  const gotoProfile = (id) => navigate(`/profile/${id}`);
 
-  // Extract unique filter options with updated data
-  const specializations = [
-    ...new Set(trainerCard.flatMap((t) => {
-      if (Array.isArray(t.trainerTags)) {
-        return t.trainerTags;
-      } else if (typeof t.trainerTags === 'string') {
-        return t.trainerTags.split(',').map(tag => tag.trim());
-      }
-      return [];
-    })),
-  ];
-  
-  const experiences = [
-    ...new Set(trainerCard.map((t) => t.trainerExperience || 0)),
-  ].sort((a, b) => b - a);
-  
-  const ratings = [
-    ...new Set(trainerCard.map((t) => Math.floor(parseFloat(t.trainerRating) || 0))),
-  ].sort((a, b) => b - a);
+  const specializations = [...new Set(trainerCard.flatMap((t) => {
+    if (Array.isArray(t.trainerTags)) return t.trainerTags;
+    if (typeof t.trainerTags === "string") return t.trainerTags.split(",").map((s) => s.trim());
+    return [];
+  }))];
 
-  // Filtering logic
+  const experiences = [...new Set(trainerCard.map((t) => t.trainerExperience || 0))].sort((a, b) => b - a);
+  const ratings     = [...new Set(trainerCard.map((t) => Math.floor(parseFloat(t.trainerRating) || 0)))].sort((a, b) => b - a);
+
   const filteredTrainers = trainerCard.filter((trainer) => {
-    const matchesSearch =
-      trainer.trainerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trainer.trainerRole.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesSpecialization = !selectedSpecialization || (() => {
-      if (Array.isArray(trainer.trainerTags)) {
-        return trainer.trainerTags.includes(selectedSpecialization);
-      } else if (typeof trainer.trainerTags === 'string') {
-        return trainer.trainerTags.split(',').map(tag => tag.trim()).includes(selectedSpecialization);
-      }
+    const matchesSearch = trainer.trainerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          trainer.trainerRole.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSpec = !selectedSpecialization || (() => {
+      if (Array.isArray(trainer.trainerTags)) return trainer.trainerTags.includes(selectedSpecialization);
+      if (typeof trainer.trainerTags === "string") return trainer.trainerTags.split(",").map((s) => s.trim()).includes(selectedSpecialization);
       return false;
     })();
-
-    const matchesExperience =
-      !selectedExperience ||
-      String(trainer.trainerExperience) === selectedExperience;
-
-    const matchesAvailability =
-      !selectedAvailability ||
-      trainer.trainerStatus === selectedAvailability;
-
-    const matchesRating =
-      !selectedRating ||
-      Math.floor(parseFloat(trainer.trainerRating) || 0) >= parseInt(selectedRating);
-
-    return (
-      matchesSearch &&
-      matchesSpecialization &&
-      matchesExperience &&
-      matchesAvailability &&
-      matchesRating
-    );
+    const matchesExp  = !selectedExperience || String(trainer.trainerExperience) === selectedExperience;
+    const matchesAvail = !selectedAvailability || trainer.trainerStatus === selectedAvailability;
+    const matchesRating = !selectedRating || Math.floor(parseFloat(trainer.trainerRating) || 0) >= parseInt(selectedRating);
+    return matchesSearch && matchesSpec && matchesExp && matchesAvail && matchesRating;
   });
 
+  const clearFilters = () => {
+    setSearchTerm(""); setSelectedSpecialization("");
+    setSelectedExperience(""); setSelectedAvailability(""); setSelectedRating("");
+  };
+
+  const hasActiveFilters = searchTerm || selectedSpecialization || selectedExperience || selectedAvailability || selectedRating;
+
   return (
-    <div className="w-full flex flex-col items-center gap-6 p-6">
-      {/* Hero Section */}
-      <section className="w-full bg-white py-6">
-        <div className="w-full flex justify-center items-center">
-          <div className="flex w-[90%] flex-col gap-2 shadow-md bg-white p-4 rounded-md">
-            <span className="font-sans font-bold text-[25px]">
-              Unlock Your Perfect Training Partner
-            </span>
-            <span>
-              Team up with certified trainers to reach your fitness goals
-            </span>
-          </div>
-        </div>
-      </section>
+    <div
+      className="min-h-screen"
+      style={{ background: "linear-gradient(160deg, #070710 0%, #0d0a14 50%, #080810 100%)" }}
+    >
+      {/* Ambient glows */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-[600px] h-[600px] rounded-full opacity-10" style={{ background: "radial-gradient(circle, #ef444488, transparent 70%)", filter: "blur(80px)" }} />
+        <div className="absolute bottom-1/3 left-0 w-[400px] h-[400px] rounded-full opacity-8" style={{ background: "radial-gradient(circle, #a855f755, transparent 70%)", filter: "blur(80px)" }} />
+        <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+      </div>
 
-      {/* Search + Filters */}
-      <section className="flex w-[90%] flex-col gap-6 shadow-md bg-white p-4 rounded-md">
-        {/* Search */}
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search trainers by name or role..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-gray-300 rounded-md pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          />
-        </div>
+      {/* ── HERO ── */}
+      <section className="relative pt-28 pb-20 px-4 sm:px-8 max-w-7xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
 
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Specialization */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
-              Specialization
-            </label>
-            <select
-              value={selectedSpecialization}
-              onChange={(e) => setSelectedSpecialization(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-2 focus:ring-2 focus:ring-blue-400"
+          {/* Left */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px w-12" style={{ background: "linear-gradient(to right, #ef4444, transparent)" }} />
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-red-500">Elite Coaching</span>
+            </div>
+            <h1
+              className="font-black leading-none mb-6 text-white"
+              style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)" }}
             >
-              <option value="">All Specializations</option>
-              {specializations.map((tag, i) => (
-                <option key={i} value={tag}>
-                  {tag}
-                </option>
+              FIND YOUR
+              <span
+                className="block"
+                style={{
+                  background: "linear-gradient(135deg, #ef4444 0%, #f97316 50%, #ef4444 100%)",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  animation: "gradientShift 4s linear infinite",
+                }}
+              >
+                PERFECT
+              </span>
+              TRAINER.
+            </h1>
+            <p className="text-white/55 text-lg leading-relaxed max-w-md mb-10">
+              Connect with world-class fitness professionals who tailor every session to your goals, your pace, and your potential.
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {STATS.map(({ value, label, Icon }, i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl p-4 text-center"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                  }}
+                >
+                  <Icon size={18} className="text-red-500 mx-auto mb-2" strokeWidth={2} />
+                  <p className="font-black text-white text-lg leading-none">{value}</p>
+                  <p className="text-white/35 text-[10px] uppercase tracking-wider mt-1">{label}</p>
+                </div>
               ))}
-            </select>
+            </div>
           </div>
 
-          {/* Experience */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
-              Experience
-            </label>
-            <select
-              value={selectedExperience}
-              onChange={(e) => setSelectedExperience(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-2 focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="">All Experience Levels</option>
-              {experiences.map((exp, i) => (
-                <option key={i} value={String(exp)}>
-                  {exp} years
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Availability */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">
-              Availability
-            </label>
-            <select
-              value={selectedAvailability}
-              onChange={(e) => setSelectedAvailability(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-2 focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="">All Availability</option>
-              <option value="Available">Available</option>
-              <option value="Unavailable">Limited</option>
-            </select>
-          </div>
-
-          {/* Rating */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Rating</label>
-            <select
-              value={selectedRating}
-              onChange={(e) => setSelectedRating(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-2 focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="">All Ratings</option>
-              {ratings.map((r, i) => (
-                <option key={i} value={String(r)}>
-                  {r}+ ★
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Results + Reset */}
-        <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>{filteredTrainers.length} trainers found</span>
-          <div className="flex gap-3">
-           
-            <button
-              className="text-blue-500 hover:underline"
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedSpecialization("");
-                setSelectedExperience("");
-                setSelectedAvailability("");
-                setSelectedRating("");
+          {/* Right — hero visual */}
+          <div className="relative w-full lg:w-[420px] flex-shrink-0 hidden md:block">
+            <div
+              className="relative rounded-3xl overflow-hidden h-[380px]"
+              style={{
+                background: "linear-gradient(135deg, rgba(239,68,68,0.1), rgba(12,8,16,0.95))",
+                border: "1px solid rgba(239,68,68,0.2)",
+                boxShadow: "0 0 60px rgba(239,68,68,0.12)",
               }}
             >
-              Clear Filters
-            </button>
+              <img
+                src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=500&h=380&fit=crop"
+                alt="Elite trainer"
+                className="w-full h-full object-cover opacity-70"
+              />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,8,16,0.9) 0%, transparent 50%)" }} />
+
+              {/* Floating badges */}
+              <div
+                className="absolute top-6 left-6 px-4 py-2.5 rounded-2xl"
+                style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}
+              >
+                <p className="text-xs font-black text-white">🏆 Top Rated</p>
+                <p className="text-[10px] text-white/45">This month</p>
+              </div>
+
+              <div
+                className="absolute top-6 right-6 px-4 py-2.5 rounded-2xl"
+                style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.3)", backdropFilter: "blur(12px)" }}
+              >
+                <p className="text-xs font-black text-red-400">⚡ 500+ Active</p>
+                <p className="text-[10px] text-white/45">Trainers online</p>
+              </div>
+
+              <div className="absolute bottom-6 left-6 right-6">
+                <div
+                  className="rounded-2xl p-4"
+                  style={{ background: "rgba(0,0,0,0.75)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}
+                >
+                  <p className="text-white font-black mb-1">Ready to start?</p>
+                  <p className="text-white/45 text-xs mb-3">Book your first session in under 2 minutes.</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-2">
+                      {[1, 2, 3].map((n) => (
+                        <div key={n} className="w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-orange-500 border-2 border-black" />
+                      ))}
+                    </div>
+                    <p className="text-white/50 text-xs">+500 trainers waiting</p>
+                    <ArrowRight size={14} className="text-red-500 ml-auto" strokeWidth={2.5} />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Trainer Cards */}
-      {filteredTrainers.length === 0 ? (
-        <div className="w-[90%] shadow-md bg-white p-8 rounded-md text-center">
-          <p className="text-gray-500 text-lg">No trainers found matching your criteria.</p>
-        </div>
-      ) : (
-        <div className="w-[90%] shadow-md bg-white p-6 rounded-md">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTrainers.map((trainer, index) => (
-              <div
-                key={trainer._id || index}
-                className="bg-white shadow-md rounded-xl overflow-hidden flex flex-col transform transition-transform duration-300 hover:scale-105 hover:shadow-xl border border-gray-100"
+      {/* ── SEARCH + FILTERS ── */}
+      <section className="sticky top-16 z-20 px-4 sm:px-8 pb-6 max-w-7xl mx-auto">
+        <div
+          className="rounded-3xl p-5 sm:p-6"
+          style={{
+            background: "rgba(10,10,18,0.9)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            backdropFilter: "blur(24px)",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+          }}
+        >
+          {/* Search row */}
+          <div className="flex gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search
+                size={16}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30"
+                strokeWidth={2}
+              />
+              <input
+                type="text"
+                placeholder="Search by name, role, or specialization..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 rounded-2xl text-sm text-white placeholder-white/25 outline-none transition-all duration-300 font-medium"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: searchTerm ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                  boxShadow: searchTerm ? "0 0 20px rgba(239,68,68,0.1)" : "none",
+                }}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Filter toggle on mobile */}
+            <button
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className="sm:hidden flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200"
+              style={{
+                background: filtersOpen ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${filtersOpen ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.08)"}`,
+                color: filtersOpen ? "#fca5a5" : "rgba(255,255,255,0.5)",
+              }}
+            >
+              <SlidersHorizontal size={14} />
+              Filters
+            </button>
+          </div>
+
+          {/* Filter dropdowns */}
+          <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${filtersOpen || window.innerWidth >= 640 ? "block" : "hidden"} sm:grid`}
+            style={{ display: filtersOpen ? "grid" : undefined }}
+          >
+            <FilterSelect
+              label="Specialization"
+              Icon={BarChart3}
+              value={selectedSpecialization}
+              onChange={setSelectedSpecialization}
+              placeholder="All Specializations"
+              options={specializations.map((s) => ({ value: s, label: s }))}
+            />
+            <FilterSelect
+              label="Experience"
+              Icon={Clock}
+              value={selectedExperience}
+              onChange={setSelectedExperience}
+              placeholder="All Experience"
+              options={experiences.map((e) => ({ value: String(e), label: `${e} years` }))}
+            />
+            <FilterSelect
+              label="Availability"
+              Icon={Users}
+              value={selectedAvailability}
+              onChange={setSelectedAvailability}
+              placeholder="All Availability"
+              options={[{ value: "Available", label: "Available" }, { value: "Unavailable", label: "Limited" }]}
+            />
+            <FilterSelect
+              label="Rating"
+              Icon={Star}
+              value={selectedRating}
+              onChange={setSelectedRating}
+              placeholder="All Ratings"
+              options={ratings.map((r) => ({ value: String(r), label: `${r}+ Stars` }))}
+            />
+          </div>
+
+          {/* Results bar */}
+          <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="flex items-center gap-2">
+              <span
+                className="text-xs font-black px-3 py-1 rounded-full"
+                style={{ background: "rgba(239,68,68,0.12)", color: "#fca5a5", border: "1px solid rgba(239,68,68,0.2)" }}
               >
-                {/* Trainer Image + Status */}
-                <div className="relative h-48 w-full">
-                  <img
-                    src={trainer.trainerImage || "https://via.placeholder.com/300x200?text=Trainer+Image"}
-                    alt={trainer.trainerName}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/300x200?text=Trainer+Image";
-                    }}
-                  />
-                  <span
-                    className={`absolute top-2 right-2 ${
-                      trainer.trainerStatus === "Available"
-                        ? "bg-green-500"
-                        : "bg-red-500"
-                    } text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg`}
-                  >
-                    {trainer.trainerStatus}
-                  </span>
-                </div>
-
-                {/* Info Section */}
-                <div className="p-4 flex flex-col gap-2 flex-grow">
-                  <div className="flex justify-between items-start">
-                    <h2 className="font-bold text-lg text-gray-800 line-clamp-1">
-                      {trainer.trainerName}
-                    </h2>
-                    <div className="flex items-center gap-1 text-yellow-500 text-sm flex-shrink-0 ml-2">
-                      <Star className="w-4 h-4 fill-yellow-500" />
-                      <span className="font-semibold">{trainer.trainerRating}</span>
-                      <span className="text-gray-500 text-xs">
-                        ({trainer.trainerReviews || 0})
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-gray-600 text-sm">{trainer.trainerRole}</p>
-                  <p className="text-gray-500 text-sm">
-                    {trainer.trainerExperience} years experience
-                  </p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {(() => {
-                      let tags = [];
-                      if (Array.isArray(trainer.trainerTags)) {
-                        tags = trainer.trainerTags.slice(0, 3);
-                      } else if (typeof trainer.trainerTags === 'string') {
-                        tags = trainer.trainerTags.split(',').map(tag => tag.trim()).slice(0, 3);
-                      }
-                      return tags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
-                        >
-                          {tag}
-                        </span>
-                      ));
-                    })()}
-                    {(() => {
-                      let totalTags = 0;
-                      if (Array.isArray(trainer.trainerTags)) {
-                        totalTags = trainer.trainerTags.length;
-                      } else if (typeof trainer.trainerTags === 'string') {
-                        totalTags = trainer.trainerTags.split(',').length;
-                      }
-                      return totalTags > 3 && (
-                        <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                          +{totalTags - 3}
-                        </span>
-                      );
-                    })()}
-                  </div>
-
-                  <p className="text-gray-600 text-sm mt-2 line-clamp-2">
-                    {trainer.trainerDescription}
-                  </p>
-
-                  {/* Certifications & Price */}
-                  <div className="flex justify-between items-center mt-3 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Award className="w-4 h-4 text-gray-500" />
-                      <span>{trainer.trainerCertifications || 0} Certs</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="w-4 h-4 text-gray-500" />
-                      <span className="font-semibold">${trainer.trainerPrice}/hr</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 p-4 pt-0">
-                  <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition text-sm">
-                    Book Session
-                  </button>
-                  <button
-                    onClick={() => gotoProfile(trainer._id)}
-                    className="flex-1 border border-blue-600 text-blue-600 py-2 rounded-lg font-medium hover:bg-blue-50 transition text-sm"
-                  >
-                    View Profile
-                  </button>
-                </div>
-              </div>
-            ))}
+                {filteredTrainers.length}
+              </span>
+              <span className="text-white/40 text-xs uppercase tracking-wider">trainers found</span>
+            </div>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors"
+              >
+                <RotateCcw size={12} strokeWidth={2.5} />
+                Clear all
+              </button>
+            )}
           </div>
         </div>
-      )}
+      </section>
+
+      {/* ── TRAINER GRID ── */}
+      <section className="px-4 sm:px-8 pb-24 max-w-7xl mx-auto">
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="rounded-3xl h-[480px] animate-pulse"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+              />
+            ))}
+          </div>
+        ) : filteredTrainers.length === 0 ? (
+          <div
+            className="rounded-3xl p-16 text-center"
+            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <p className="text-6xl mb-4">🔍</p>
+            <p className="text-white font-black text-2xl mb-2">No trainers found</p>
+            <p className="text-white/40 text-sm mb-6">Try adjusting your filters or search term</p>
+            <button
+              onClick={clearFilters}
+              className="px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-white transition-all duration-200 hover:scale-105"
+              style={{ background: "linear-gradient(135deg, #ef4444, #b91c1c)", boxShadow: "0 6px 24px rgba(239,68,68,0.3)" }}
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTrainers.map((trainer, index) => (
+              <TrainerCard
+                key={trainer._id || index}
+                trainer={trainer}
+                onProfile={gotoProfile}
+                index={index}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <style>{`
+        @keyframes gradientShift {
+          0%   { background-position: 0% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.4; }
+        }
+      `}</style>
     </div>
   );
 };
 
 export default Trainer;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import { Search, Filter, Star, Award, Calendar, MapPin, Phone, Mail, Instagram, Facebook, Twitter, ChevronLeft, ChevronRight, Clock, DollarSign, Users } from 'lucide-react';
-
-// // Sample trainer data
-// const sampleTrainers = [
-//   {
-//     id: 1,
-//     name: "Sarah Johnson",
-//     title: "Certified Personal Trainer",
-//     experience: 8,
-//     rating: 4.9,
-//     reviews: 156,
-//     photo: "https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?w=400&h=400&fit=crop&crop=face",
-//     specializations: ["Weight Loss", "Strength Training", "HIIT"],
-//     bio: "Passionate about helping clients achieve their fitness goals through personalized training programs. Specializes in functional movement and sustainable lifestyle changes.",
-//     certifications: ["NASM-CPT", "Nutrition Coach", "TRX Certified"],
-//     location: "Downtown Gym",
-//     availability: "Available",
-//     hourlyRate: 75,
-//     clients: 45,
-//     testimonials: [
-//       { name: "Mike Chen", rating: 5, text: "Sarah transformed my entire approach to fitness. Lost 30 pounds in 4 months!" },
-//       { name: "Emily Davis", rating: 5, text: "Professional, knowledgeable, and motivating. Highly recommend!" }
-//     ],
-//     socialMedia: {
-//       instagram: "@sarahfit",
-//       facebook: "sarahjohnsonfitness",
-//       twitter: "@sarahtrains"
-//     },
-//     services: [
-//       { name: "1-on-1 Personal Training", price: 75, duration: "60 min" },
-//       { name: "Small Group Training", price: 45, duration: "45 min" },
-//       { name: "Nutrition Consultation", price: 50, duration: "30 min" }
-//     ]
-//   },
-//   {
-//     id: 2,
-//     name: "Marcus Rodriguez",
-//     title: "Strength & Conditioning Coach",
-//     experience: 12,
-//     rating: 4.8,
-//     reviews: 203,
-//     photo: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&crop=face",
-//     specializations: ["Powerlifting", "Athletic Performance", "Injury Prevention"],
-//     bio: "Former collegiate athlete turned coach. Helps athletes and fitness enthusiasts build strength safely and effectively with proven training methodologies.",
-//     certifications: ["CSCS", "USAW Level 2", "FMS Certified"],
-//     location: "Iron House Gym",
-//     availability: "Limited",
-//     hourlyRate: 95,
-//     clients: 67,
-//     testimonials: [
-//       { name: "Jake Wilson", rating: 5, text: "Increased my deadlift by 100lbs in 6 months. Marcus knows his stuff!" },
-//       { name: "Lisa Park", rating: 4, text: "Great technique coaching. Helped me lift safely and confidently." }
-//     ],
-//     services: [
-//       { name: "Strength Training", price: 95, duration: "75 min" },
-//       { name: "Athletic Performance", price: 85, duration: "60 min" },
-//       { name: "Movement Assessment", price: 60, duration: "45 min" }
-//     ]
-//   },
-//   {
-//     id: 3,
-//     name: "Emma Thompson",
-//     title: "Yoga & Wellness Instructor",
-//     experience: 6,
-//     rating: 4.9,
-//     reviews: 189,
-//     photo: "https://images.unsplash.com/photo-1506629905880-b2ce82d8dd35?w=400&h=400&fit=crop&crop=face",
-//     specializations: ["Yoga", "Meditation", "Flexibility"],
-//     bio: "Dedicated to promoting holistic wellness through mindful movement and breath work. Creates inclusive spaces for practitioners of all levels.",
-//     certifications: ["RYT-500", "Yin Certified", "Meditation Teacher"],
-//     location: "Zen Studio",
-//     availability: "Available",
-//     hourlyRate: 65,
-//     clients: 78,
-//     testimonials: [
-//       { name: "Amanda Lee", rating: 5, text: "Emma's classes are transformative. My flexibility and mental clarity have improved so much." },
-//       { name: "David Kim", rating: 5, text: "Perfect for beginners. Emma creates such a welcoming environment." }
-//     ],
-//     services: [
-//       { name: "Private Yoga Session", price: 65, duration: "60 min" },
-//       { name: "Meditation Coaching", price: 55, duration: "45 min" },
-//       { name: "Flexibility Assessment", price: 40, duration: "30 min" }
-//     ]
-//   },
-//   {
-//     id: 4,
-//     name: "Alex Chen",
-//     title: "CrossFit Coach",
-//     experience: 5,
-//     rating: 4.7,
-//     reviews: 142,
-//     photo: "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&h=400&fit=crop&crop=face",
-//     specializations: ["CrossFit", "Olympic Lifting", "Metabolic Training"],
-//     bio: "High-energy coach who brings competitive spirit and technical expertise to every session. Specializes in Olympic lifting and functional fitness.",
-//     certifications: ["CF-L2", "USAW Sports Performance", "CPR/AED"],
-//     location: "CrossFit Downtown",
-//     availability: "Available",
-//     hourlyRate: 80,
-//     clients: 52,
-//     testimonials: [
-//       { name: "Rachel Green", rating: 5, text: "Alex pushed me to achieve things I never thought possible. Amazing coach!" },
-//       { name: "Tom Brady", rating: 4, text: "Great technique instruction and programming. Saw results quickly." }
-//     ],
-//     services: [
-//       { name: "CrossFit Personal Training", price: 80, duration: "60 min" },
-//       { name: "Olympic Lifting", price: 90, duration: "75 min" },
-//       { name: "Competition Prep", price: 100, duration: "90 min" }
-//     ]
-//   },
-//   {
-//     id: 5,
-//     name: "Isabella Martinez",
-//     title: "Nutrition & Fitness Coach",
-//     experience: 10,
-//     rating: 4.8,
-//     reviews: 267,
-//     photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face",
-//     specializations: ["Nutrition", "Weight Management", "Lifestyle Coaching"],
-//     bio: "Combines fitness training with nutritional guidance to help clients achieve lasting transformation. Believes in sustainable, science-based approaches.",
-//     certifications: ["RD", "NASM-CPT", "Precision Nutrition L1"],
-//     location: "Wellness Center",
-//     availability: "Available",
-//     hourlyRate: 85,
-//     clients: 89,
-//     testimonials: [
-//       { name: "Maria Santos", rating: 5, text: "Isabella helped me develop a healthy relationship with food and exercise. Life-changing!" },
-//       { name: "John Smith", rating: 5, text: "Lost 45 pounds and kept it off for 2 years. Her approach really works." }
-//     ],
-//     services: [
-//       { name: "Nutrition + Training", price: 85, duration: "75 min" },
-//       { name: "Meal Planning Consultation", price: 70, duration: "60 min" },
-//       { name: "Body Composition Analysis", price: 50, duration: "30 min" }
-//     ]
-//   },
-//   {
-//     id: 6,
-//     name: "Ryan Foster",
-//     title: "Rehabilitation Specialist",
-//     experience: 9,
-//     rating: 4.9,
-//     reviews: 198,
-//     photo: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=face",
-//     specializations: ["Injury Rehab", "Corrective Exercise", "Senior Fitness"],
-//     bio: "Specializes in helping clients recover from injuries and return to peak performance. Expert in movement analysis and corrective exercise programming.",
-//     certifications: ["NASM-CES", "PRI Certified", "SFMA Level 2"],
-//     location: "Rehab Fitness Center",
-//     availability: "Limited",
-//     hourlyRate: 90,
-//     clients: 43,
-//     testimonials: [
-//       { name: "Carol Johnson", rating: 5, text: "Ryan helped me get back to running after my knee surgery. Incredible knowledge!" },
-//       { name: "Steve Miller", rating: 5, text: "Fixed my back pain issues that I'd had for years. Highly recommend!" }
-//     ],
-//     services: [
-//       { name: "Injury Rehabilitation", price: 90, duration: "60 min" },
-//       { name: "Movement Assessment", price: 75, duration: "45 min" },
-//       { name: "Corrective Exercise", price: 80, duration: "60 min" }
-//     ]
-//   }
-// ];
-
-// const TrainerCard = ({ trainer, onClick }) => {
-//   const [isHovered, setIsHovered] = useState(false);
-
-//   return (
-//     <div 
-//       className={`bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform ${
-//         isHovered ? 'scale-105' : ''
-//       } cursor-pointer overflow-hidden`}
-//       onMouseEnter={() => setIsHovered(true)}
-//       onMouseLeave={() => setIsHovered(false)}
-//       onClick={() => onClick(trainer)}
-//     >
-//       <div className="relative">
-//         <img 
-//           src={trainer.photo} 
-//           alt={trainer.name}
-//           className="w-full h-48 object-cover"
-//         />
-//         <div className="absolute top-4 right-4 bg-white px-2 py-1 rounded-full text-sm font-medium">
-//           {trainer.availability === 'Available' ? (
-//             <span className="text-green-600">Available</span>
-//           ) : (
-//             <span className="text-orange-600">Limited</span>
-//           )}
-//         </div>
-//       </div>
-      
-//       <div className="p-6">
-//         <div className="flex items-center justify-between mb-2">
-//           <h3 className="text-xl font-bold text-gray-900">{trainer.name}</h3>
-//           <div className="flex items-center text-yellow-500">
-//             <Star className="w-4 h-4 fill-current" />
-//             <span className="ml-1 text-sm font-medium text-gray-700">{trainer.rating}</span>
-//             <span className="ml-1 text-sm text-gray-500">({trainer.reviews})</span>
-//           </div>
-//         </div>
-        
-//         <p className="text-gray-600 text-sm mb-2">{trainer.title}</p>
-//         <p className="text-gray-500 text-sm mb-4">{trainer.experience} years experience</p>
-        
-//         <div className="flex flex-wrap gap-1 mb-4">
-//           {trainer.specializations.map((spec, index) => (
-//             <span 
-//               key={index}
-//               className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
-//             >
-//               {spec}
-//             </span>
-//           ))}
-//         </div>
-        
-//         <p className="text-gray-600 text-sm mb-4 line-clamp-3">{trainer.bio}</p>
-        
-//         <div className="flex items-center justify-between mb-4">
-//           <div className="flex items-center text-gray-500 text-sm">
-//             <Award className="w-4 h-4 mr-1" />
-//             {trainer.certifications.length} Certifications
-//           </div>
-//           <div className="flex items-center text-gray-500 text-sm">
-//             <DollarSign className="w-4 h-4 mr-1" />
-//             ${trainer.hourlyRate}/hr
-//           </div>
-//         </div>
-        
-//         <div className="flex space-x-3">
-//           <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-//             Book Session
-//           </button>
-//           <button className="flex-1 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors font-medium">
-//             View Profile
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// const TrainerProfile = ({ trainer, onBack }) => {
-//   const [activeTab, setActiveTab] = useState('overview');
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       {/* Breadcrumb */}
-//       <div className="bg-white shadow-sm">
-//         <div className="max-w-6xl mx-auto px-4 py-4">
-//           <button 
-//             onClick={onBack}
-//             className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
-//           >
-//             <ChevronLeft className="w-5 h-5 mr-1" />
-//             Back to Trainers
-//           </button>
-//         </div>
-//       </div>
-
-//       {/* Profile Header */}
-//       <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white">
-//         <div className="max-w-6xl mx-auto px-4 py-12">
-//           <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
-//             <img 
-//               src={trainer.photo} 
-//               alt={trainer.name}
-//               className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-lg object-cover"
-//             />
-            
-//             <div className="text-center md:text-left flex-1">
-//               <h1 className="text-3xl md:text-4xl font-bold mb-2">{trainer.name}</h1>
-//               <p className="text-xl mb-2 opacity-90">{trainer.title}</p>
-              
-//               <div className="flex flex-col md:flex-row items-center md:items-start space-y-2 md:space-y-0 md:space-x-6 mb-4">
-//                 <div className="flex items-center">
-//                   <Star className="w-5 h-5 fill-current text-yellow-400 mr-1" />
-//                   <span className="font-semibold">{trainer.rating}</span>
-//                   <span className="ml-1 opacity-75">({trainer.reviews} reviews)</span>
-//                 </div>
-//                 <div className="flex items-center opacity-90">
-//                   <Clock className="w-4 h-4 mr-1" />
-//                   {trainer.experience} years experience
-//                 </div>
-//                 <div className="flex items-center opacity-90">
-//                   <Users className="w-4 h-4 mr-1" />
-//                   {trainer.clients}+ clients trained
-//                 </div>
-//               </div>
-              
-//               <div className="flex flex-wrap gap-2 mb-6 justify-center md:justify-start">
-//                 {trainer.specializations.map((spec, index) => (
-//                   <span 
-//                     key={index}
-//                     className="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-medium"
-//                   >
-//                     {spec}
-//                   </span>
-//                 ))}
-//               </div>
-              
-//               <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 justify-center md:justify-start">
-//                 <button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-//                   Book Session Now
-//                 </button>
-//                 <button className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
-//                   Message Trainer
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Tab Navigation */}
-//       <div className="bg-white shadow-sm sticky top-0 z-10">
-//         <div className="max-w-6xl mx-auto px-4">
-//           <div className="flex space-x-8 overflow-x-auto">
-//             {['overview', 'services', 'reviews', 'contact'].map((tab) => (
-//               <button
-//                 key={tab}
-//                 onClick={() => setActiveTab(tab)}
-//                 className={`py-4 px-2 border-b-2 font-medium capitalize transition-colors whitespace-nowrap ${
-//                   activeTab === tab 
-//                     ? 'border-blue-600 text-blue-600' 
-//                     : 'border-transparent text-gray-500 hover:text-gray-700'
-//                 }`}
-//               >
-//                 {tab}
-//               </button>
-//             ))}
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Tab Content */}
-//       <div className="max-w-6xl mx-auto px-4 py-8">
-//         {activeTab === 'overview' && (
-//           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//             <div className="lg:col-span-2">
-//               <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-//                 <h2 className="text-2xl font-bold mb-4">About {trainer.name}</h2>
-//                 <p className="text-gray-600 mb-6 leading-relaxed">
-//                   {trainer.bio} With {trainer.experience} years of experience, {trainer.name.split(' ')[0]} has developed a comprehensive approach to fitness that combines proven methodologies with personalized attention to help clients achieve their goals safely and effectively.
-//                 </p>
-                
-//                 <h3 className="text-xl font-semibold mb-4">Certifications & Qualifications</h3>
-//                 <div className="flex flex-wrap gap-3">
-//                   {trainer.certifications.map((cert, index) => (
-//                     <div key={index} className="flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-lg">
-//                       <Award className="w-4 h-4 mr-2" />
-//                       {cert}
-//                     </div>
-//                   ))}
-//                 </div>
-//               </div>
-
-//               <div className="bg-white rounded-xl shadow-sm p-6">
-//                 <h3 className="text-xl font-semibold mb-4">Client Testimonials</h3>
-//                 <div className="space-y-4">
-//                   {trainer.testimonials.map((testimonial, index) => (
-//                     <div key={index} className="border-l-4 border-blue-600 pl-4">
-//                       <div className="flex items-center mb-2">
-//                         <div className="flex text-yellow-400 mr-2">
-//                           {[...Array(testimonial.rating)].map((_, i) => (
-//                             <Star key={i} className="w-4 h-4 fill-current" />
-//                           ))}
-//                         </div>
-//                         <span className="font-medium text-gray-900">{testimonial.name}</span>
-//                       </div>
-//                       <p className="text-gray-600 italic">"{testimonial.text}"</p>
-//                     </div>
-//                   ))}
-//                 </div>
-//               </div>
-//             </div>
-
-//             <div>
-//               <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-//                 <h3 className="text-xl font-semibold mb-4">Quick Info</h3>
-//                 <div className="space-y-3">
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-gray-600">Location</span>
-//                     <span className="font-medium">{trainer.location}</span>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-gray-600">Hourly Rate</span>
-//                     <span className="font-medium">${trainer.hourlyRate}</span>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-gray-600">Availability</span>
-//                     <span className={`font-medium ${trainer.availability === 'Available' ? 'text-green-600' : 'text-orange-600'}`}>
-//                       {trainer.availability}
-//                     </span>
-//                   </div>
-//                   <div className="flex items-center justify-between">
-//                     <span className="text-gray-600">Clients Trained</span>
-//                     <span className="font-medium">{trainer.clients}+</span>
-//                   </div>
-//                 </div>
-//               </div>
-
-//               <div className="bg-blue-50 rounded-xl p-6">
-//                 <h3 className="text-xl font-semibold mb-4 text-blue-900">Ready to Start?</h3>
-//                 <p className="text-blue-700 mb-4">Book your first session with {trainer.name.split(' ')[0]} today and take the first step towards your fitness goals.</p>
-//                 <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-//                   Schedule Consultation
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-
-//         {activeTab === 'services' && (
-//           <div className="bg-white rounded-xl shadow-sm p-6">
-//             <h2 className="text-2xl font-bold mb-6">Training Services</h2>
-//             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//               {trainer.services.map((service, index) => (
-//                 <div key={index} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-//                   <h3 className="text-xl font-semibold mb-2">{service.name}</h3>
-//                   <div className="flex items-center justify-between mb-4">
-//                     <span className="text-2xl font-bold text-blue-600">${service.price}</span>
-//                     <span className="text-gray-500">{service.duration}</span>
-//                   </div>
-//                   <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-//                     Book This Service
-//                   </button>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         )}
-
-//         {activeTab === 'reviews' && (
-//           <div className="bg-white rounded-xl shadow-sm p-6">
-//             <div className="flex items-center justify-between mb-6">
-//               <h2 className="text-2xl font-bold">Client Reviews</h2>
-//               <div className="flex items-center">
-//                 <Star className="w-6 h-6 text-yellow-400 fill-current mr-2" />
-//                 <span className="text-2xl font-bold">{trainer.rating}</span>
-//                 <span className="text-gray-500 ml-2">({trainer.reviews} reviews)</span>
-//               </div>
-//             </div>
-            
-//             <div className="space-y-6">
-//               {trainer.testimonials.map((review, index) => (
-//                 <div key={index} className="border-b border-gray-200 pb-6 last:border-b-0">
-//                   <div className="flex items-center mb-3">
-//                     <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold mr-3">
-//                       {review.name.split(' ').map(n => n[0]).join('')}
-//                     </div>
-//                     <div>
-//                       <div className="font-semibold">{review.name}</div>
-//                       <div className="flex text-yellow-400">
-//                         {[...Array(review.rating)].map((_, i) => (
-//                           <Star key={i} className="w-4 h-4 fill-current" />
-//                         ))}
-//                       </div>
-//                     </div>
-//                   </div>
-//                   <p className="text-gray-600 ml-13">"{review.text}"</p>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         )}
-
-//         {activeTab === 'contact' && (
-//           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <h2 className="text-2xl font-bold mb-6">Contact Information</h2>
-//               <div className="space-y-4">
-//                 <div className="flex items-center">
-//                   <MapPin className="w-5 h-5 text-blue-600 mr-3" />
-//                   <span>{trainer.location}</span>
-//                 </div>
-//                 <div className="flex items-center">
-//                   <Mail className="w-5 h-5 text-blue-600 mr-3" />
-//                   <span>{trainer.name.toLowerCase().replace(' ', '.')}@email.com</span>
-//                 </div>
-//                 <div className="flex items-center">
-//                   <Phone className="w-5 h-5 text-blue-600 mr-3" />
-//                   <span>(555) 123-4567</span>
-//                 </div>
-//               </div>
-
-//               <div className="mt-6">
-//                 <h3 className="text-lg font-semibold mb-4">Follow {trainer.name.split(' ')[0]}</h3>
-//                 <div className="flex space-x-4">
-//                   {trainer.socialMedia?.instagram && (
-//                     <a href="#" className="text-blue-600 hover:text-blue-700">
-//                       <Instagram className="w-6 h-6" />
-//                     </a>
-//                   )}
-//                   {trainer.socialMedia?.facebook && (
-//                     <a href="#" className="text-blue-600 hover:text-blue-700">
-//                       <Facebook className="w-6 h-6" />
-//                     </a>
-//                   )}
-//                   {trainer.socialMedia?.twitter && (
-//                     <a href="#" className="text-blue-600 hover:text-blue-700">
-//                       <Twitter className="w-6 h-6" />
-//                     </a>
-//                   )}
-//                 </div>
-//               </div>
-//             </div>
-
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <h2 className="text-2xl font-bold mb-6">Send a Message</h2>
-//               <form className="space-y-4">
-//                 <div>
-//                   <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-//                   <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
-//                 </div>
-//                 <div>
-//                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-//                   <input type="email" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
-//                 </div>
-//                 <div>
-//                   <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-//                   <textarea rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"></textarea>
-//                 </div>
-//                 <button type="submit" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-//                   Send Message
-//                 </button>
-//               </form>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// const TrainerDirectory = () => {
-//   const [trainers, setTrainers] = useState(sampleTrainers);
-//   const [filteredTrainers, setFilteredTrainers] = useState(sampleTrainers);
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [selectedSpecialization, setSelectedSpecialization] = useState('');
-//   const [selectedExperience, setSelectedExperience] = useState('');
-//   const [selectedAvailability, setSelectedAvailability] = useState('');
-//   const [selectedRating, setSelectedRating] = useState('');
-//   const [sortBy, setSortBy] = useState('rating');
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [selectedTrainer, setSelectedTrainer] = useState(null);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const trainersPerPage = 6;
-
-//   const specializations = [...new Set(trainers.flatMap(t => t.specializations))];
-//   const experienceLevels = ['0-2 years', '3-5 years', '6-10 years', '10+ years'];
-
-//   useEffect(() => {
-//     setIsLoading(true);
-//     setTimeout(() => {
-//       let filtered = trainers.filter(trainer => {
-//         const matchesSearch = trainer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//                              trainer.title.toLowerCase().includes(searchTerm.toLowerCase());
-//         const matchesSpecialization = !selectedSpecialization || 
-//                                      trainer.specializations.includes(selectedSpecialization);
-//         const matchesExperience = !selectedExperience || 
-//                                  (selectedExperience === '0-2 years' && trainer.experience <= 2) ||
-//                                  (selectedExperience === '3-5 years' && trainer.experience >= 3 && trainer.experience <= 5) ||
-//                                  (selectedExperience === '6-10 years' && trainer.experience >= 6 && trainer.experience <= 10) ||
-//                                  (selectedExperience === '10+ years' && trainer.experience > 10);
-//         const matchesAvailability = !selectedAvailability || trainer.availability === selectedAvailability;
-//         const matchesRating = !selectedRating || trainer.rating >= parseFloat(selectedRating);
-        
-//         return matchesSearch && matchesSpecialization && matchesExperience && 
-//                matchesAvailability && matchesRating;
-//       });
-
-//       // Sort filtered results
-//       filtered.sort((a, b) => {
-//         switch (sortBy) {
-//           case 'rating':
-//             return b.rating - a.rating;
-//           case 'experience':
-//             return b.experience - a.experience;
-//           case 'name':
-//             return a.name.localeCompare(b.name);
-//           default:
-//             return 0;
-//         }
-//       });
-
-//       setFilteredTrainers(filtered);
-//       setCurrentPage(1);
-//       setIsLoading(false);
-//     }, 500);
-//   }, [trainers, searchTerm, selectedSpecialization, selectedExperience, selectedAvailability, selectedRating, sortBy]);
-
-//   const handleTrainerClick = (trainer) => {
-//     setSelectedTrainer(trainer);
-//   };
-
-//   const handleBackToDirectory = () => {
-//     setSelectedTrainer(null);
-//   };
-
-//   const clearFilters = () => {
-//     setSearchTerm('');
-//     setSelectedSpecialization('');
-//     setSelectedExperience('');
-//     setSelectedAvailability('');
-//     setSelectedRating('');
-//     setSortBy('rating');
-//   };
-
-//   // Pagination
-//   const indexOfLastTrainer = currentPage * trainersPerPage;
-//   const indexOfFirstTrainer = indexOfLastTrainer - trainersPerPage;
-//   const currentTrainers = filteredTrainers.slice(indexOfFirstTrainer, indexOfLastTrainer);
-//   const totalPages = Math.ceil(filteredTrainers.length / trainersPerPage);
-
-//   if (selectedTrainer) {
-//     return <TrainerProfile trainer={selectedTrainer} onBack={handleBackToDirectory} />;
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       {/* Header */}
-//       <div className="bg-white shadow-sm">
-//         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-//           <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Your Perfect Trainer</h1>
-//           <p className="text-gray-600">Connect with certified fitness professionals to achieve your goals</p>
-//         </div>
-//       </div>
-
-//       {/* Search and Filters */}
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-//         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-//           {/* Search Bar */}
-//           <div className="relative mb-4">
-//             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-//             <input
-//               type="text"
-//               placeholder="Search trainers by name or title..."
-//               value={searchTerm}
-//               onChange={(e) => setSearchTerm(e.target.value)}
-//               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-//             />
-//           </div>
-
-//           {/* Filters */}
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
-//               <select
-//                 value={selectedSpecialization}
-//                 onChange={(e) => setSelectedSpecialization(e.target.value)}
-//                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-//               >
-//                 <option value="">All Specializations</option>
-//                 {specializations.map(spec => (
-//                   <option key={spec} value={spec}>{spec}</option>
-//                 ))}
-//               </select>
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
-//               <select
-//                 value={selectedExperience}
-//                 onChange={(e) => setSelectedExperience(e.target.value)}
-//                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-//               >
-//                 <option value="">All Experience Levels</option>
-//                 {experienceLevels.map(level => (
-//                   <option key={level} value={level}>{level}</option>
-//                 ))}
-//               </select>
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
-//               <select
-//                 value={selectedAvailability}
-//                 onChange={(e) => setSelectedAvailability(e.target.value)}
-//                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-//               >
-//                 <option value="">All Availability</option>
-//                 <option value="Available">Available</option>
-//                 <option value="Limited">Limited</option>
-//               </select>
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
-//               <select
-//                 value={selectedRating}
-//                 onChange={(e) => setSelectedRating(e.target.value)}
-//                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-//               >
-//                 <option value="">Any Rating</option>
-//                 <option value="4.5">4.5+ Stars</option>
-//                 <option value="4.0">4.0+ Stars</option>
-//                 <option value="3.5">3.5+ Stars</option>
-//               </select>
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-//               <select
-//                 value={sortBy}
-//                 onChange={(e) => setSortBy(e.target.value)}
-//                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-//               >
-//                 <option value="rating">Highest Rated</option>
-//                 <option value="experience">Most Experience</option>
-//                 <option value="name">Name (A-Z)</option>
-//               </select>
-//             </div>
-//           </div>
-
-//           {/* Filter Actions */}
-//           <div className="flex items-center justify-between">
-//             <p className="text-sm text-gray-600">
-//               {filteredTrainers.length} trainer{filteredTrainers.length !== 1 ? 's' : ''} found
-//             </p>
-//             <button
-//               onClick={clearFilters}
-//               className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-//             >
-//               Clear All Filters
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Loading State */}
-//         {isLoading && (
-//           <div className="flex justify-center items-center py-12">
-//             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-//           </div>
-//         )}
-
-//         {/* Trainers Grid */}
-//         {!isLoading && (
-//           <>
-//             {currentTrainers.length === 0 ? (
-//               <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-//                 <div className="text-gray-400 mb-4">
-//                   <Filter className="w-16 h-16 mx-auto" />
-//                 </div>
-//                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No trainers found</h3>
-//                 <p className="text-gray-600 mb-4">Try adjusting your filters or search terms</p>
-//                 <button
-//                   onClick={clearFilters}
-//                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-//                 >
-//                   Clear Filters
-//                 </button>
-//               </div>
-//             ) : (
-//               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-//                 {currentTrainers.map(trainer => (
-//                   <TrainerCard
-//                     key={trainer.id}
-//                     trainer={trainer}
-//                     onClick={handleTrainerClick}
-//                   />
-//                 ))}
-//               </div>
-//             )}
-
-//             {/* Pagination */}
-//             {totalPages > 1 && (
-//               <div className="flex justify-center items-center space-x-2">
-//                 <button
-//                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-//                   disabled={currentPage === 1}
-//                   className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-//                 >
-//                   <ChevronLeft className="w-5 h-5" />
-//                 </button>
-                
-//                 {[...Array(totalPages)].map((_, index) => (
-//                   <button
-//                     key={index}
-//                     onClick={() => setCurrentPage(index + 1)}
-//                     className={`px-4 py-2 rounded-lg ${
-//                       currentPage === index + 1
-//                         ? 'bg-blue-600 text-white'
-//                         : 'border border-gray-300 hover:bg-gray-50'
-//                     }`}
-//                   >
-//                     {index + 1}
-//                   </button>
-//                 ))}
-                
-//                 <button
-//                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-//                   disabled={currentPage === totalPages}
-//                   className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-//                 >
-//                   <ChevronRight className="w-5 h-5" />
-//                 </button>
-//               </div>
-//             )}
-//           </>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default TrainerDirectory

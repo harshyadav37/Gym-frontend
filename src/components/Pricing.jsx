@@ -74,7 +74,7 @@ const Pricing = () => {
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-100 p-6">
-      <div className="text-center mb-12">
+      <div className="text-center mt-20 mb-12">
         <h2 className="text-5xl font-black bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent mb-4">
           Choose Your Perfect Plan
         </h2>
