@@ -17,7 +17,7 @@ import PublicRoute from "./components/PublicRoute"; // ✅ new
 import LogoutButton from "./components/LogoutButton";
 import Trainer from "./components/Trainer";
 import TrainerProfile from "./components/TrainerProfile";
-
+// import Logo from "./components/logo";
 
 
 // Layout wrapper with Navbar
@@ -43,14 +43,14 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-         <Route
+         {/* <Route
           path="/logo"
           element={
             
                 <Logo />
              
           }
-        />
+        /> */}
         <Route
           path="/contact"
           element={
