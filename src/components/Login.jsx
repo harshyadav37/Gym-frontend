@@ -406,7 +406,7 @@ const Login = () => {
 
     try {
       // const url = "http://localhost:8080/auth/login";
-      const url = "https://gym-project-backend-2-lbdu.onrender.com/auth/login";
+      const url = "https://fitzone-backend-ivyq.onrender.com/auth/login";
       const response = await fetch(url, {
         method: "POST",
         headers: {
