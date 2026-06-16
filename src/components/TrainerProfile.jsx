@@ -664,7 +664,7 @@ const BookingModal = ({ trainer, selectedService, onClose }) => {
     setErrorMsg("");
     setStep(2);
     try {
-      const res = await fetch(`http://localhost:8080/products/bookings`, {
+      const res = await fetch(`https://fitzone-backend-ivyq.onrender.com/products/bookings`, {
         method: "POST",
         headers: {
           Authorization: token,
@@ -861,7 +861,7 @@ const TrainerProfile = () => {
 
   const fetchTrainerById = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/products/get-trainercard/${id}`, {
+      const res = await fetch(`https://fitzone-backend-ivyq.onrender.com/products/get-trainercard/${id}`, {
         headers: { Authorization: localStorage.getItem("token"), "Content-Type": "application/json" },
       });
       if (!res.ok) throw new Error("Failed to fetch trainer");
@@ -883,7 +883,7 @@ const TrainerProfile = () => {
   const submitReview = async () => {
     if (!reviewName || !reviewText) return alert("Please fill all fields");
     try {
-      const res = await fetch(`http://localhost:8080/products/trainers/${id}/reviews`, {
+      const res = await fetch(`https://fitzone-backend-ivyq.onrender.com/products/trainers/${id}/reviews`, {
         method: "POST",
         headers: { Authorization: localStorage.getItem("token"), "Content-Type": "application/json" },
         body: JSON.stringify({ name: reviewName, text: reviewText, rating: reviewRating }),

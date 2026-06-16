@@ -115,7 +115,7 @@ const Footer = () => {
           </div>
 
           {/* Newsletter Section */}
-          <div className="mt-16 p-8 bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700 backdrop-blur-sm">
+          {/* <div className="mt-16 p-8 bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700 backdrop-blur-sm">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-bold text-white mb-2">Stay Updated with FitZone</h3>
               <p className="text-gray-300">Get the latest fitness tips, workout plans, and exclusive offers delivered to your inbox!</p>
@@ -130,7 +130,7 @@ const Footer = () => {
                 Subscribe
               </button>
             </div>
-          </div>
+          </div> */}
 
           {/* Testimonial Section */}
           <div className="mt-12 text-center">

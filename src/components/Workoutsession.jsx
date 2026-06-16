@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-
+import Footer from './Footer'
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
 const workoutData = [
@@ -1292,7 +1292,7 @@ const WorkoutSession = () => {
 
           </div>
         </div>
-
+            <Footer/>
         {/* Gradient shift keyframes */}
         <style>{`
           @keyframes gradientShift {

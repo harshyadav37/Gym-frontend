@@ -6,6 +6,7 @@ import {
   Dumbbell, Flame, Apple, Moon, Sun, ChevronRight,
   BarChart2, Shield, Star, Users, CheckCircle, Ruler, Weight
 } from 'lucide-react'
+import Footer from './Footer'
 
 // ── lightweight fade-in on scroll ────────────────────────────────────────────
 const FadeIn = ({ children, delay = 0, className = '', from = 'bottom' }) => {
@@ -475,7 +476,7 @@ const BMICalculator = () => {
           </FadeIn>
         </section>
       </div>
-
+      <Footer />
       <ToastContainer
         position="top-center"
         autoClose={3000}

@@ -118,6 +118,7 @@ import {
   ArrowRight, Flame, MessageCircle, Headphones,
   Send, AlertCircle,
 } from "lucide-react";
+import Footer from "./Footer";
 
 // ── tiny intersection-based fade-in ──────────────────────────────────────────
 const FadeIn = ({ children, delay = 0, className = "", from = "bottom" }) => {
@@ -553,6 +554,7 @@ const Contact = () => {
           </FadeIn>
         </section>
       </div>
+      <Footer />
     </div>
   );
 };

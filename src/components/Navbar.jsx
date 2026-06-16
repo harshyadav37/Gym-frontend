@@ -209,13 +209,13 @@ const Navbar = () => {
             {/* Right actions */}
             <div className="hidden lg:flex items-center gap-3">
               {/* Login */}
-              <button
+              {/* <button
                 onClick={() => navigate('/login')}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white transition-all duration-200 hover:bg-white/5"
               >
                 <LogIn size={14} strokeWidth={2.5} />
                 Login
-              </button>
+              </button> */}
 
               {/* Join Now */}
               <button

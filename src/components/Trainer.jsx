@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { handleError } from "../util";
 import { useNavigate } from "react-router-dom";
+import Footer from "./Footer";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
@@ -371,7 +372,8 @@ const Trainer = () => {
 
   const fetchTrainers = async () => {
     try {
-      const url = "http://localhost:8080/products/get-trainercard";
+      // const url = "http://localhost:8080/products/get-trainercard";
+      const url = "https://fitzone-backend-ivyq.onrender.com/products/get-trainercard";
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -720,6 +722,7 @@ const Trainer = () => {
           </div>
         )}
       </section>
+      <Footer />
 
       <style>{`
         @keyframes gradientShift {
