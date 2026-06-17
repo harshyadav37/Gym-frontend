@@ -17,11 +17,11 @@ const Hero = () => {
           playsInline
           className="absolute inset-0 h-full w-full object-cover"
         >
-          <source src="/gymVideo.mp4" type="video/mp4" />
+          <source src="/gyminterior.mp4" type="video/mp4" />
         </video>
 
         {/* Overlay */}
-        <div className="absolute inset-0 bg-black/75" />
+        <div className="absolute inset-0 bg-black/25" />
 
         {/* Content */}
         <div className="relative z-10 flex min-h-screen items-center py-24 md:py-28">
