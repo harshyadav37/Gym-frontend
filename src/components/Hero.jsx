@@ -17,7 +17,7 @@ const Hero = () => {
           playsInline
           className="absolute inset-0 h-full w-full object-cover"
         >
-          <source src="/home.mp4" type="video/mp4" />
+          <source src="/gymVideo.mp4" type="video/mp4" />
         </video>
 
         {/* Overlay */}

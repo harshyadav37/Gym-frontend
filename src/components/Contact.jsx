@@ -120,6 +120,7 @@ import {
 } from "lucide-react";
 import Footer from "./Footer";
 
+
 // ── tiny intersection-based fade-in ──────────────────────────────────────────
 const FadeIn = ({ children, delay = 0, className = "", from = "bottom" }) => {
   const ref = useRef(null);
@@ -202,7 +203,7 @@ const Contact = () => {
     setLoading(true);
     try {
       const { data } = await axios.post(
-        "http://localhost:4000/send/mail",
+        "https://mail-rho-drab.vercel.app/send/mail",
         { name, email, message },
         { withCredentials: true, headers: { "Content-Type": "application/json" } }
       );
@@ -305,21 +306,7 @@ const Contact = () => {
         {/* ── info cards row ── */}
         <section className="max-w-6xl mx-auto px-4 mb-14">
           <FadeIn delay={0.05}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { icon: <Zap className="w-5 h-5 text-red-400" />, title: "Fast Response", desc: "Average reply under 24 hours", color: "from-red-500/10 to-rose-500/10 border-red-500/20" },
-                { icon: <Headphones className="w-5 h-5 text-blue-400" />, title: "Expert Support", desc: "Professional fitness consultation", color: "from-blue-500/10 to-cyan-500/10 border-blue-500/20" },
-                { icon: <Globe className="w-5 h-5 text-green-400" />, title: "Global Community", desc: "Thousands of active members", color: "from-green-500/10 to-emerald-500/10 border-green-500/20" },
-              ].map((c, i) => (
-                <div key={i} className={`bg-gradient-to-br ${c.color} border rounded-2xl p-5 flex items-center gap-4 hover:-translate-y-1 transition-all backdrop-blur-sm`}>
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">{c.icon}</div>
-                  <div>
-                    <p className="font-bold text-sm text-white">{c.title}</p>
-                    <p className="text-white/40 text-xs">{c.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+           
           </FadeIn>
         </section>
 
@@ -541,14 +528,14 @@ const Contact = () => {
                 <p className="text-white/50 text-base mb-8 max-w-lg mx-auto">
                   Join thousands of members who've already transformed their lives. Your first consultation is free.
                 </p>
-                <div className="flex flex-wrap justify-center gap-3">
+                {/* <div className="flex flex-wrap justify-center gap-3">
                   <button className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-red-600 to-rose-500 rounded-xl font-bold hover:shadow-lg hover:shadow-red-600/40 hover:-translate-y-0.5 transition-all text-sm">
                     <MessageCircle className="w-4 h-4" /> Start Free Consultation
                   </button>
                   <button className="flex items-center gap-2 px-8 py-4 bg-white/10 border border-white/20 rounded-xl font-bold hover:bg-white/15 transition-all text-sm backdrop-blur-sm">
                     <Users className="w-4 h-4" /> Browse Trainers
                   </button>
-                </div>
+                </div> */}
               </div>
             </div>
           </FadeIn>
