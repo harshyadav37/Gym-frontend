@@ -155,7 +155,7 @@ const Navbar = () => {
     <>
       {/* ── DESKTOP / TABLET HEADER ── */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-500  overflow-x-hidden"
         style={{
           background: scrolled
             ? 'rgba(8,8,12,0.92)'

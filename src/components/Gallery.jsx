@@ -34,7 +34,10 @@ const heroText = {
 // ─── Decorative Blur Orb ───────────────────────────────────────────────────
 const Orb = ({ className }) => (
   <div
-    className={`absolute rounded-full pointer-events-none blur-3xl opacity-20 ${className}`}
+    // Decorative orb — visually identical but flagged aria-hidden
+    // and annotated for more stable compositing (helps with transforms)
+    className={`absolute rounded-full pointer-events-none blur-3xl opacity-20 will-change-transform ${className}`}
+    aria-hidden
   />
 );
 
@@ -45,7 +48,8 @@ const GalleryCard = ({ item, index }) => (
     variants={cardVariant}
     initial="hidden"
     animate="visible"
-    className="group relative rounded-2xl overflow-hidden cursor-pointer
+    // add min-w-0 so grid children cannot force the container wider
+    className="group relative rounded-2xl overflow-hidden cursor-pointer min-w-0
                shadow-[0_4px_32px_rgba(0,0,0,0.5)]
                border border-white/5
                hover:border-amber-400/30
@@ -57,7 +61,8 @@ const GalleryCard = ({ item, index }) => (
       <img
         src={item.logo}
         alt={item.name}
-        className="w-full h-full object-cover
+        loading="lazy"
+        className="block w-full h-full max-w-full object-cover
                    transition-transform duration-700 ease-out
                    group-hover:scale-110"
       />
@@ -93,17 +98,7 @@ const GalleryCard = ({ item, index }) => (
       {/* <span className="text-zinc-400 text-xs font-medium tracking-wider uppercase">
         {item.name}
       </span> */}
-      {/* <svg
-        className="w-4 h-4 text-amber-400 opacity-0 group-hover:opacity-100
-                      -translate-x-2 group-hover:translate-x-0
-                      transition-all duration-300"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-      </svg> */}
+     
     </div>
   </motion.div>
 );
@@ -258,7 +253,9 @@ const Gallery = () => {
 
   return (
     <div
-      className="min-h-screen text-white"
+      // Prevent any child (absolute or negative positioned) from causing
+      // horizontal page overflow while preserving visual design.
+      className="min-h-screen text-white relative overflow-x-hidden"
       style={{ background: "linear-gradient(160deg,#0a0a0c 0%,#111113 60%,#0d0c0e 100%)" }}
     >
       {/* ── Decorative orbs ─────────────────────────────────────────────── */}
@@ -366,7 +363,7 @@ const Gallery = () => {
               <div className="relative">
                 <SectionHeader title={category.title} index={sIdx} />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 min-w-0">
                   {category.skills.map((item, idx) => (
                     <GalleryCard key={idx} item={item} index={idx} />
                   ))}

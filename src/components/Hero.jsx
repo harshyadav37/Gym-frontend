@@ -8,9 +8,9 @@ const Hero = () => {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative min-h-screen w-full overflow-hidden overflow-x-hidden">
+      <section className="relative min-h-screen w-full bg-[red] overflow-hidden overflow-x-hidden">
         {/* Background Video */}
-        <video
+        {/* <video
           autoPlay
           muted
           loop
@@ -18,10 +18,20 @@ const Hero = () => {
           className="absolute inset-0 h-full w-full object-cover"
         >
           <source src="/gyminterior.mp4" type="video/mp4" />
-        </video>
+        </video> */}
+        <video
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="auto"
+  className="absolute inset-0 w-full h-full object-cover object-center"
+>
+  <source src="/gyminterior.mp4" type="video/mp4" />
+</video>
 
         {/* Overlay */}
-        <div className="absolute inset-0 bg-black/25" />
+        <div className="absolute inset-0 bg-black/5" />
 
         {/* Content */}
         <div className="relative z-10 flex min-h-screen items-center py-24 md:py-28">
