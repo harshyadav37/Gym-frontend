@@ -354,9 +354,7 @@ const Signup = () => {
         <HeartbeatDivider />
       </div>
 
-      {/* ---------------------------------------------------------- */}
-      {/* LEFT — brand story + member benefits                        */}
-      {/* ---------------------------------------------------------- */}
+     
       <div className="relative z-[2] hidden w-full md:flex md:w-[40%] lg:w-[56%]">
         {/* <img src={HERO_IMAGE} alt="Athlete training" className="absolute inset-0 h-full w-full object-cover" /> */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 to-black/30" />
